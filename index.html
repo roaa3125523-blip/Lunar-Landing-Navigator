@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Lunar Explorer | South Pole Mission</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+
+<body>
+
+  <header class="topbar">
+
+    <a class="brand" href="#">
+      <span class="brand-mark">L</span>
+
+      <span>
+        LUNAR
+        <span class="brand-light"> EXPLORER</span>
+        <small>SOUTH POLE MISSION</small>
+      </span>
+    </a>
+
+    <div class="top-meta">
+      <span class="live-dot"></span>
+      TERRAIN DATA VIEWER
+      <span class="meta-divider"></span>
+      10 CANDIDATE REGIONS
+    </div>
+
+  </header>
+
+
+  <main class="app-shell">
+
+    <section class="hero-row">
+
+      <div>
+
+        <p class="eyebrow">
+          LUNAR SOUTH POLE · SITE SELECTION
+        </p>
+
+        <h1>
+          Explore the lunar terrain<span>.</span>
+        </h1>
+
+        <p class="hero-sub">
+          Inspect candidate regions, compare illumination
+          conditions, and evaluate mission priorities.
+        </p>
+
+      </div>
+
+      <div class="status-card">
+
+        <span class="status-label">MISSION AREA</span>
+
+        <strong>South Polar Region</strong>
+
+        <span class="status-note">
+          Elevation-based 3D visualization
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <section class="workspace">
+
+      <div class="terrain-card">
+
+        <div class="section-head">
+
+          <div>
+            <span class="section-kicker">01 / TERRAIN</span>
+            <h2>3D surface map</h2>
+          </div>
+
+          <div class="map-tools">
+            <span class="key-dot"></span>
+            Candidate site
+            <span class="map-hint">
+              Drag to rotate · Scroll to zoom
+            </span>
+          </div>
+
+        </div>
+
+
+        <div id="moon3d" class="moon-view">
+
+          <div id="loadingMessage" class="loading-message">
+            <span class="loader"></span>
+            Loading terrain data…
+          </div>
+
+          <div class="view-caption">
+            LUNAR SOUTH POLE · TERRAIN MODEL
+          </div>
+
+          <div class="view-controls">
+            <button
+              id="resetView"
+              class="icon-button"
+              title="Reset view">
+              ↺
+            </button>
+          </div>
+
+        </div>
+
+
+        <div class="terrain-footer">
+
+          <span>
+            <i class="legend-pin"></i>
+            Candidate locations
+          </span>
+
+          <span id="terrainStatus">
+            Preparing terrain…
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <aside class="side-column">
+
+        <section class="panel site-panel">
+
+          <div class="section-head compact">
+
+            <div>
+              <span class="section-kicker">
+                02 / CANDIDATES
+              </span>
+
+              <h2>Candidate sites</h2>
+            </div>
+
+            <span class="count-pill" id="siteCount">
+              0 / 10
+            </span>
+
+          </div>
+
+          <div id="siteList" class="site-list">
+
+            <p class="muted small">
+              Site list will appear when terrain files load.
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <section class="panel selected-panel">
+
+          <span class="section-kicker">
+            SELECTED REGION
+          </span>
+
+          <h3 id="selectedSiteName">
+            No site selected
+          </h3>
+
+          <p id="selectedSiteCoords" class="muted small">
+            Choose a marker on the terrain or a site from the list.
+          </p>
+
+          <button
+            id="openAnalysis"
+            class="primary-button"
+            disabled>
+
+            Analyze selected site
+            <span>→</span>
+
+          </button>
+
+        </section>
+
+      </aside>
+
+    </section>
+
+
+
+    <section class="lower-grid">
+
+
+      <section class="panel analysis-panel">
+
+        <div class="section-head">
+
+          <div>
+            <span class="section-kicker">
+              03 / ENVIRONMENTAL ANALYSIS
+            </span>
+
+            <h2>Illumination analysis</h2>
+          </div>
+
+          <span class="panel-tag">
+            Selected date range
+          </span>
+
+        </div>
+
+
+        <div class="analysis-placeholder" id="analysisPlaceholder">
+
+          <div class="placeholder-icon">⌁</div>
+
+          <strong>
+            Analysis will appear here
+          </strong>
+
+          <p>
+            Select a candidate site, choose a date range,
+            and run analysis to display Sun, Earth,
+            and combined visibility graphs.
+          </p>
+
+        </div>
+
+
+        <div id="chartsArea" class="charts-grid hidden">
+
+          <article class="chart-card">
+
+            <h3>Sun illumination</h3>
+
+            <canvas id="sunChart"></canvas>
+
+          </article>
+
+
+          <article class="chart-card">
+
+            <h3>Earth visibility</h3>
+
+            <canvas id="earthChart"></canvas>
+
+          </article>
+
+
+          <article class="chart-card chart-wide">
+
+            <h3>Sun + Earth combined</h3>
+
+            <canvas id="combinedChart"></canvas>
+
+          </article>
+
+        </div>
+
+      </section>
+
+
+
+      <section class="panel ai-panel">
+
+        <div class="section-head">
+
+          <div>
+            <span class="section-kicker">
+              04 / DECISION SUPPORT
+            </span>
+
+            <h2>AI site recommendation</h2>
+          </div>
+
+          <span class="ai-mark">AI</span>
+
+        </div>
+
+
+        <p class="muted small ai-description">
+          Set the mission period and choose the resource
+          that matters most. The recommendation engine
+          will be connected to your Python model.
+        </p>
+
+
+        <div class="form-field">
+
+          <label for="aiStart">
+            START DATE
+          </label>
+
+          <input
+            type="date"
+            id="aiStart"
+            value="2026-11-10"
+            min="2026-11-10"
+            max="2026-12-09">
+
+        </div>
+
+
+        <div class="form-field">
+
+          <label for="aiEnd">
+            END DATE
+          </label>
+
+          <input
+            type="date"
+            id="aiEnd"
+            value="2026-11-25"
+            min="2026-11-10"
+            max="2026-12-09">
+
+        </div>
+
+
+        <div class="form-field">
+
+          <label for="priority">
+            MISSION PRIORITY
+          </label>
+
+          <select id="priority">
+
+            <option value="both">
+              Sun + Earth
+            </option>
+
+            <option value="sun">
+              Sun availability
+            </option>
+
+            <option value="earth">
+              Earth visibility
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          id="recommendButton"
+          class="primary-button full-button">
+
+          Find best 3 sites
+          <span>→</span>
+
+        </button>
+
+
+        <div
+          id="recommendationStatus"
+          class="result-status">
+
+          Python recommendation service is not connected yet.
+
+        </div>
+
+
+        <div
+          id="recommendations"
+          class="recommendations">
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <footer class="footer">
+
+      <span>LUNAR EXPLORER</span>
+
+      <span>
+        Research visualization interface · Data-driven results only
+      </span>
+
+    </footer>
+
+  </main>
+
+
+
+  <dialog id="analysisDialog" class="modal">
+
+    <form method="dialog" class="modal-close-form">
+
+      <button
+        class="close-button"
+        aria-label="Close">
+
+        ×
+
+      </button>
+
+    </form>
+
+
+    <span class="section-kicker">
+      SITE ANALYSIS
+    </span>
+
+
+    <h2 id="dialogSiteName">
+      Selected site
+    </h2>
+
+
+    <p class="muted small">
+      Choose the observation period for this candidate region.
+    </p>
+
+
+    <div class="date-grid">
+
+      <div class="form-field">
+
+        <label for="analysisStart">
+          START DATE
+        </label>
+
+        <input
+          type="date"
+          id="analysisStart"
+          value="2026-11-10"
+          min="2026-11-10"
+          max="2026-12-09">
+
+      </div>
+
+
+      <div class="form-field">
+
+        <label for="analysisEnd">
+          END DATE
+        </label>
+
+        <input
+          type="date"
+          id="analysisEnd"
+          value="2026-11-25"
+          min="2026-11-10"
+          max="2026-12-09">
+
+      </div>
+
+    </div>
+
+
+    <button
+      id="runAnalysis"
+      class="primary-button full-button">
+
+      Run analysis
+      <span>→</span>
+
+    </button>
+
+
+    <p id="dialogStatus" class="result-status"></p>
+
+  </dialog>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+  <script type="module" src="moon.js"></script>
+
+  <script type="module" src="analysis.js"></script>
+
+  <script type="module" src="ai-assistant.js"></script>
+
+</body>
+</html>

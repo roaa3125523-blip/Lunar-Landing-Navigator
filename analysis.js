@@ -1,22 +1,30 @@
-const analyzeBtn = document.getElementById("analyzeBtn");
+// Environmental Analysis Module for Lunar Explorer
 
-const startDate = document.getElementById("startDate");
-const endDate = document.getElementById("endDate");
-const siteSelect = document.getElementById("siteSelect");
+let currentSiteId = "Site01";
+let currentSiteName = "Connecting Ridge";
 
-const formMessage = document.getElementById("formMessage");
-const analysisMessage = document.getElementById("analysisMessage");
+// Track site selection from 3D Moon
+window.addEventListener("lunar:site-selected", event => {
+    if (event.detail) {
+        currentSiteId = event.detail.site_id || currentSiteId;
+        currentSiteName = event.detail.site_name || currentSiteId;
+    }
+    const dialogSiteName = document.getElementById("dialogSiteName");
+    if (dialogSiteName) {
+        dialogSiteName.textContent = currentSiteName;
+    }
+});
 
-
-// EMPTY CHARTS
-
+// Helper to create stepped binary visibility line charts
 function createVisibilityChart(canvasId, label, color) {
-
     const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn(`Canvas element not found: #${canvasId}`);
+        return null;
+    }
 
     return new Chart(canvas, {
         type: "line",
-
         data: {
             labels: [],
             datasets: [{
@@ -30,188 +38,140 @@ function createVisibilityChart(canvasId, label, color) {
                 fill: false
             }]
         },
-
         options: {
             responsive: true,
             maintainAspectRatio: false,
-
             interaction: {
                 intersect: false,
                 mode: "index"
             },
-
             plugins: {
                 legend: {
                     labels: {
-                        color: "#E9DFC9"
+                        color: "#E9DFC9",
+                        font: { family: "Space Grotesk, sans-serif" }
                     }
                 }
             },
-
             scales: {
                 x: {
                     ticks: {
                         color: "#AAB5C4",
-                        maxTicksLimit: 8
+                        maxTicksLimit: 8,
+                        font: { family: "Space Grotesk, sans-serif" }
                     },
-                    grid: {
-                        color: "#24354A"
-                    },
+                    grid: { color: "#24354A" },
                     title: {
                         display: true,
-                        text: "Date and Time",
+                        text: "Observation Date & Time (UTC)",
                         color: "#C7AD87"
                     }
                 },
-
                 y: {
                     min: 0,
                     max: 1,
-
                     ticks: {
                         stepSize: 1,
                         color: "#AAB5C4",
-
                         callback: function(value) {
-                            return value === 1
-                                ? "Visible"
-                                : "Not Visible";
+                            return value === 1 ? "Visible" : "Blocked";
                         }
                     },
-
-                    grid: {
-                        color: "#24354A"
-                    }
+                    grid: { color: "#24354A" }
                 }
             }
         }
     });
 }
 
-
-const sunChart = createVisibilityChart(
-    "sunChart",
-    "Sun Visibility",
-    "#C7AD87"
-);
-
-const earthChart = createVisibilityChart(
-    "earthChart",
-    "Earth Visibility",
-    "#9CB5C7"
-);
-
-const simultaneousChart = createVisibilityChart(
-    "simultaneousChart",
-    "Simultaneous Visibility",
-    "#B8A5C9"
-);
-
-
-// UPDATE CHARTS USING BACKEND DATA
+// Initialize Charts matching canvas IDs in index.html
+const sunChart = createVisibilityChart("sunChart", "Sun Illumination", "#C7AD87");
+const earthChart = createVisibilityChart("earthChart", "Earth Line of Sight", "#9CB5C7");
+const combinedChart = createVisibilityChart("combinedChart", "Sun + Earth Simultaneous Visibility", "#B8A5C9");
 
 function updateChart(chart, records, field) {
-
-    chart.data.labels = records.map(
-        item => item.time
-    );
-
-    chart.data.datasets[0].data = records.map(
-        item => item[field] ? 1 : 0
-    );
-
+    if (!chart) return;
+    chart.data.labels = records.map(item => item.time);
+    chart.data.datasets[0].data = records.map(item => item[field] ? 1 : 0);
     chart.update();
 }
 
+// Elements
+const runAnalysisBtn = document.getElementById("runAnalysis") || document.getElementById("analyzeBtn");
+const analysisDialog = document.getElementById("analysisDialog");
+const dialogStatus = document.getElementById("dialogStatus") || document.getElementById("formMessage");
+const analysisPlaceholder = document.getElementById("analysisPlaceholder");
+const chartsArea = document.getElementById("chartsArea");
 
-// ANALYZE BUTTON
+const startInput = document.getElementById("analysisStart") || document.getElementById("startDate");
+const endInput = document.getElementById("analysisEnd") || document.getElementById("endDate");
 
-analyzeBtn.addEventListener("click", async () => {
+if (runAnalysisBtn) {
+    runAnalysisBtn.addEventListener("click", async () => {
+        const startDate = (startInput && startInput.value) || "2026-11-10";
+        const endDate = (endInput && endInput.value) || "2026-11-25";
 
-    formMessage.textContent = "";
-
-    if (!siteSelect.value) {
-        formMessage.textContent =
-            "Please select a landing site.";
-        return;
-    }
-
-    if (!startDate.value || !endDate.value) {
-        formMessage.textContent =
-            "Please select the mission start and end dates.";
-        return;
-    }
-
-    if (endDate.value < startDate.value) {
-        formMessage.textContent =
-            "The end date must not be before the start date.";
-        return;
-    }
-
-    analyzeBtn.disabled = true;
-    analyzeBtn.textContent = "Analyzing...";
-
-    try {
-
-        const response = await fetch("/api/analysis", {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                site_id: siteSelect.value,
-                start_date: startDate.value,
-                end_date: endDate.value
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(
-                "The analysis service is not available."
-            );
+        if (dialogStatus) {
+            dialogStatus.textContent = "";
         }
 
-        const result = await response.json();
-
-        if (!Array.isArray(result.hourly_results)) {
-            throw new Error("Invalid analysis data.");
+        if (endDate <= startDate) {
+            if (dialogStatus) dialogStatus.textContent = "End date must be after start date.";
+            return;
         }
 
-        const records = result.hourly_results;
+        runAnalysisBtn.disabled = true;
+        const originalText = runAnalysisBtn.innerHTML;
+        runAnalysisBtn.textContent = "Computing visibility...";
 
-        updateChart(
-            sunChart,
-            records,
-            "sun_visibility"
-        );
+        try {
+            const response = await fetch("/api/analysis", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    site_id: currentSiteId,
+                    start_date: startDate,
+                    end_date: endDate
+                })
+            });
 
-        updateChart(
-            earthChart,
-            records,
-            "earth_visibility"
-        );
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || errData.details || "Analysis calculation failed.");
+            }
 
-        updateChart(
-            simultaneousChart,
-            records,
-            "simultaneous_visibility"
-        );
+            const result = await response.json();
+            const records = result.hourly_results;
 
-        analysisMessage.textContent =
-            "Analysis data loaded successfully.";
+            if (!Array.isArray(records) || records.length === 0) {
+                throw new Error("No data returned for the selected time range.");
+            }
 
-    } catch (error) {
+            // Update charts
+            updateChart(sunChart, records, "sun_visibility");
+            updateChart(earthChart, records, "earth_visibility");
+            updateChart(combinedChart, records, "simultaneous_visibility");
 
-        console.error(error);
+            // Reveal charts
+            if (analysisPlaceholder) analysisPlaceholder.style.display = "none";
+            if (chartsArea) chartsArea.classList.remove("hidden");
 
-        analysisMessage.textContent =
-            "Analysis service is not connected yet. The charts will appear after the backend is connected.";
+            // Close modal
+            if (analysisDialog && typeof analysisDialog.close === "function") {
+                analysisDialog.close();
+            }
 
-    } finally {
+            // Smooth scroll to charts
+            chartsArea?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-        analyzeBtn.disabled = false;
-        analyzeBtn.textContent = "Analyze Mission";
-    }
-});
+        } catch (error) {
+            console.error("Analysis error:", error);
+            if (dialogStatus) {
+                dialogStatus.textContent = error.message || "Failed to load analysis.";
+            }
+        } finally {
+            runAnalysisBtn.disabled = false;
+            runAnalysisBtn.innerHTML = originalText;
+        }
+    });
+}
